@@ -1,8 +1,9 @@
-package concurrency
+package main
 
 import (
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -23,11 +24,14 @@ type Search func(ctx context.Context, query string) (Result, error)
 
 func fakeSearch(kind string) Search {
 	return func(_ context.Context, query string) (Result, error) {
-		return Result(fmt.Sprintf("%s result for %q", kind, query)), nil
+		if kind == "image" {
+			return Result(fmt.Sprintf("%s result for %q", kind, query)), nil
+		}
+		return "", errors.New("err")
 	}
 }
 
-func main() {
+func main1() {
 	Google := func(ctx context.Context, query string) ([]Result, error) {
 		g, ctx := errgroup.WithContext(ctx)
 
@@ -40,6 +44,7 @@ func main() {
 				if err == nil {
 					results[i] = result
 				}
+				fmt.Println("====one", result, err)
 				return err
 			})
 		}
@@ -51,7 +56,7 @@ func main() {
 
 	results, err := Google(context.Background(), "golang")
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Println("some error", err, results)
 		return
 	}
 	for _, result := range results {
